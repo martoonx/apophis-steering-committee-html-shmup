@@ -10,9 +10,9 @@ A retro-inspired arcade space shooter built entirely in a single HTML file. Defe
 
 ## 🎮 Play Now
 
-Simply open `apophis-24.html` in any modern browser. No installation, no dependencies, no build process required.
+Simply open `index.html` in any modern browser. No installation, no dependencies, no build process required.
 
-**[▶️ Play Apophis](apophis-24.html)**
+**[▶️ Play Apophis](index.html)**
 
 ---
 
@@ -116,18 +116,18 @@ Tested and working on:
 
 ```bash
 # Just open the file in your browser
-open apophis-24.html
+open index.html
 
 # Or use a simple HTTP server
 python -m http.server 8000
-# Then visit http://localhost:8000/apophis-24.html
+# Then visit http://localhost:8000/index.html
 ```
 
 ### Project Structure
 
 ```
 apophis/
-├── apophis-24.html    # The complete game
+├── index.html    # The complete game
 ├── README.md          # This file
 └── LICENSE            # MIT License
 ```

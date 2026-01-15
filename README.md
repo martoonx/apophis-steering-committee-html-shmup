@@ -12,7 +12,7 @@ A retro-inspired arcade space shooter built entirely in a single HTML file. Defe
 
 Simply open `index.html` in any modern browser. No installation, no dependencies, no build process required.
 
-**[▶️ Play Apophis](index.html)**
+**[▶️ Play Apophis](https://martoonx.github.io/apophis-steering-committee-html-shmup/)**
 
 ---
 

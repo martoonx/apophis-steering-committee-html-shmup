@@ -1,122 +1,91 @@
-# CLAUDE.md
+# APOPHIS - Project Context
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Overview
+APOPHIS is a retro-inspired arcade space shooter. The player defends Earth from the asteroid Apophis across multiple chapters featuring unique gameplay mechanics, boss battles, and classic arcade aesthetics.
 
-## Project Overview
+## Project Structure
 
-**Apophis** is a retro-inspired arcade space shooter built entirely in a single self-contained HTML file (`index.html`). The game features 4 chapters per level with unique gameplay mechanics, boss battles, and classic arcade aesthetics. It uses vanilla JavaScript with zero dependencies.
-
-## Development
-
-### Running the Game
-
-```bash
-# Simply open in browser
-open index.html
-
-# Or use local server
-python -m http.server 8000
-# Then visit http://localhost:8000/index.html
+```
+apophis/
+├── index.html          # HTML shell that loads all scripts
+├── css/
+│   └── styles.css      # All styling
+├── js/
+│   ├── config.js       # Constants, settings, weapon definitions
+│   ├── state.js        # All game state variables
+│   ├── audio.js        # Web Audio API sound system
+│   ├── input.js        # Keyboard and gamepad handling
+│   ├── title.js        # Title screen rendering
+│   ├── player.js       # Ship movement, shooting, shield, boombas
+│   ├── enemies.js      # Enemy spawning, movement, blockdots
+│   ├── bosses.js       # Mini-bosses and Harasser logic
+│   ├── pickups.js      # Pickup spawning and collection
+│   ├── bullets.js      # Bullet/missile creation and updates
+│   ├── collision.js    # All collision detection
+│   ├── render.js       # All drawing code
+│   ├── hud.js          # HUD and overlay screens
+│   └── main.js         # Game loop, init, ties everything together
+├── build.sh            # Script to combine back into single HTML
+├── CLAUDE.md           # This file
+└── README.md           # Project documentation
 ```
 
-### File Structure
+## Module Dependencies
 
-This is a **single-file application**. All code exists in `index.html`:
-- HTML structure (canvas elements, HUD overlays)
-- CSS styling (inline in `<style>` tag)
-- JavaScript game logic (inline in `<script>` tag, ~3244 lines)
+Load order matters! Scripts must be loaded in this order:
+1. config.js (no dependencies)
+2. state.js (no dependencies)
+3. audio.js (no dependencies)
+4. input.js (depends on state for gamepad tracking)
+5. title.js (depends on state, config)
+6. bullets.js (depends on state, config, audio)
+7. pickups.js (depends on state, config)
+8. enemies.js (depends on state, config, bullets)
+9. bosses.js (depends on state, config, audio, bullets)
+10. player.js (depends on state, config, audio, bullets)
+11. collision.js (depends on state, audio, player effects)
+12. render.js (depends on state, config)
+13. hud.js (depends on state, config)
+14. main.js (depends on everything)
 
-**No build process, no package manager, no dependencies.**
+## Key Game Concepts
 
-## Code Architecture
+### Chapters (per level)
+1. **Open Space** (Chapter 1) - Top-down vertical scrolling, 2D coordinates
+2. **Planetside** (Chapter 2) - 3D perspective with horizon, worldLane/z coordinates
+3. **Trench Canyon** (Chapter 3) - Winding canyon with 3D perspective
+4. **Boss Sector** (Chapter 4) - Boss fight, returns to 2D
 
-### Game State Management
+### Coordinate Systems
+- **Chapter 1 & 4**: Standard 2D (x, y) with entities using `verticalDrop: true`
+- **Chapter 2 & 3**: 3D perspective using `worldLane` and `z` depth
 
-The game uses global variables for state management (lines 422-467):
-- **Player state**: `health`, `lives`, `shieldLevel`, `weaponInventory`, `missileAmmo`, `boombaQueue`
-- **Level progression**: `level`, `chapter`, `chapterTimer`, `bossActive`
-- **Entities**: `enemies`, `bullets`, `particles`, `pickups`, `harassers`, `miniBosses`
+### Entity Types
+- **Enemies**: Regular enemies (50 pts), Blockdots (200 pts, drop boombas)
+- **Mini-bosses**: Appear level 2+, immune to bullets, drop loot
+- **Harasser**: Chapter 4 boss, immune to missiles
 
-### Chapter System
+### Weapons
+0. Default rapid shot
+1. Sine wave oscillating
+2. Scatter shot (5 bullets)
+3. Laser beam
 
-The game has a 4-chapter progression per level:
-1. **Chapter 1 - Open Space**: Classic vertical scrolling shooter
-2. **Chapter 2 - Planetside**: 3D perspective with horizon-based enemy positioning
-3. **Chapter 3 - Trench Canyon**: Winding canyon navigation with narrowing walls
-4. **Chapter 4 - Boss Sector**: Boss fight against "Harasser" enemy
+### Boombas
+- **Area**: Clears enemies in radius
+- **Screen**: Clears entire screen
+- **Charged**: Hold to power up
 
-Chapter duration is controlled by `chapterTimer` with a fixed duration of 1200 frames (20 seconds at 60 FPS) for chapters 1-3. Chapter 4 has no time limit.
+## State Management
 
-### Rendering System
+All game state lives in `state.js` as module-level variables. Functions access state directly via imports.
 
-Uses Canvas 2D context with two separate canvases:
-- **titleCanvas**: Title screen with animated starfield and game instructions
-- **gameCanvas**: Main game rendering
+## Building
 
-The game employs a **3D perspective system** for chapters 2-3:
-- `enemyWorldLanes` defines 7 lateral positions in 3D space
-- `fovScale` (0.75) controls field of view
-- Enemies scale based on distance from horizon (z-depth)
-- Bullets angle toward horizon center for perspective effect
+Run `./build.sh` to combine all modules back into a single `index-built.html` file for distribution.
 
-### Game Loop
-
-Fixed timestep loop targeting 60 FPS (lines 458-462):
-- `TARGET_FPS = 60`
-- `FRAME_DURATION = 16.67ms`
-- Uses accumulator pattern for consistent cross-browser timing
-
-### Audio System
-
-Procedural audio using Web Audio API:
-- **Engine sound**: Sawtooth oscillator that changes pitch with ship movement and shield state
-- **Boss sound**: Triangle oscillator that follows boss position
-- **Sound effects**: Generated via `playSound(freq, type, dur, vol)` function
-
-### Enemy Types & Combat
-
-**Enemies**:
-- Standard enemies (50 pts)
-- Blockdots (200 pts) - drop boombas
-- Mini-bosses (1000 pts) - diamond-shaped, **immune to bullets**, bullets ricochet
-- Harasser boss (5000 pts) - **immune to missiles**, missiles bounce off
-
-**Weapons**:
-- 4 weapon types: Default blaster, Sine wave, Scatter shot, Laser
-- Missiles: Lock-on targeting system with max 10 ammo
-- Boombas: 3 types in queue (area/screen/charged)
-- Shield: Hold X to activate, regenerates over time
-
-### Key Functions
-
-- `init()` (line 528): Reset game state
-- `advanceChapter()` (line 567): Chapter progression logic
-- `updateSectorDisplay()` (line 553): Update HUD chapter name
-- `renderTitleScreen()` (line 77): Animated title screen
-- `updateEngineSound()` (line 495): Audio state management
-- `getChapterDuration()` (line 558): Returns frame count for current chapter
-
-## Working with This Codebase
-
-### Modifying Gameplay
-
-- **Enemy spawning**: Search for `enemies.push` calls, different logic per chapter
-- **Weapon behavior**: Look for weapon type switch statements in bullet creation
-- **Chapter mechanics**: Chapter-specific code is marked with comments like `// Chapter 2:` or `// Chapters 2 & 3:`
-- **Collision detection**: Different systems for 2D (chapter 1) vs 3D perspective (chapters 2-3)
-
-### Testing Changes
-
-Since this is a single HTML file with no build step:
-1. Make edits to `index.html`
-2. Refresh browser to test
-3. Use browser console for debugging
-4. Press `R` key to restart game during testing
-
-### Version Tracking
-
-Current version is **v24** (see line 5 in HTML title and line 40 in version display). Major versions documented in README.md under "Version History".
-
-## Current Branch Context
-
-Working on `feature/game-controller-support` branch. Main branch is `main` for pull requests.
+## Code Style
+- Use ES6 modules with explicit exports
+- Keep functions focused and single-purpose
+- Document complex calculations with comments
+- Maintain the retro aesthetic in all visual code

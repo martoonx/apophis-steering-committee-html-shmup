@@ -102,6 +102,11 @@ export function handleWeaponCycling() {
 export function handleMissileFiring() {
     if (State.gameOver || State.respawnTimer > 0) return;
     
+    // Keyboard missile key (V)
+    if (Input.isMissileKeyPressed() && State.missileCooldown === 0) {
+        fireMissile();
+    }
+    
     // Gamepad missile button
     if (Input.isGamepadButtonJustPressed('missile')) {
         fireMissile();

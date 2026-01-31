@@ -270,6 +270,7 @@ function render() {
         Render.renderParticles();
         Render.renderBars();
         Render.renderPlayer();
+        Render.renderTouchControls();
         
         // Overlays
         renderGameOver();

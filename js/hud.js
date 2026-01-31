@@ -10,21 +10,32 @@ import * as Config from './config.js';
 export function renderHUD() {
     const ctx = State.ctx;
     ctx.shadowBlur = 0;
-    ctx.font = '14px Courier New';
+    
+    // Mobile scaling
+    const isMobile = State.width < 600;
+    const scale = isMobile ? 0.8 : 1;
+    const fontSize = Math.floor(14 * scale);
+    
+    ctx.font = `${fontSize}px Courier New`;
     ctx.textAlign = 'left';
+    
+    // Position adjustments for mobile
+    const leftMargin = isMobile ? 10 : 20;
+    const bottomOffset = isMobile ? 70 : 100;
+    const lineSpacing = isMobile ? 15 : 20;
     
     // Weapon display
     const weaponName = Config.WEAPON_NAMES[State.weaponInventory[State.currentWeapon]] || 'DEFAULT';
     ctx.fillStyle = '#00ffff';
-    ctx.fillText(`WEAPON: ${weaponName}`, 20, State.height - 100);
+    ctx.fillText(`WEAPON: ${weaponName}`, leftMargin, State.height - bottomOffset);
     
     // Missiles
     ctx.fillStyle = State.missileAmmo <= 2 ? '#ff3300' : '#ff6600';
-    ctx.fillText(`MISSILES: ${State.missileAmmo}/${Config.MAX_MISSILE_AMMO}`, 20, State.height - 80);
+    ctx.fillText(`MISSILES: ${State.missileAmmo}/${Config.MAX_MISSILE_AMMO}`, leftMargin, State.height - bottomOffset + lineSpacing);
     
     // Boombas
     ctx.fillStyle = '#ff6600';
-    ctx.fillText(`BOOMBAS: ${State.boombaQueue.length}/${Config.MAX_BOOMBA_QUEUE}`, 20, State.height - 60);
+    ctx.fillText(`BOOMBAS: ${State.boombaQueue.length}/${Config.MAX_BOOMBA_QUEUE}`, leftMargin, State.height - bottomOffset + lineSpacing * 2);
     
     if (State.boombaQueue.length > 0) {
         const display = State.boombaQueue.slice(0, 3).map((b, idx) => {
@@ -32,13 +43,13 @@ export function renderHUD() {
             return idx === 0 ? `[${labels[b]}]` : labels[b];
         }).join(' → ');
         ctx.fillStyle = '#ffaa66';
-        ctx.fillText(display, 20, State.height - 40);
+        ctx.fillText(display, leftMargin, State.height - bottomOffset + lineSpacing * 3);
     }
     
     // Invulnerability
     if (State.invulnerabilityTimer > 0) {
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(`INVULN: ${Math.ceil(State.invulnerabilityTimer / 60)}s`, 20, State.height - 20);
+        ctx.fillText(`INVULN: ${Math.ceil(State.invulnerabilityTimer / 60)}s`, leftMargin, State.height - bottomOffset + lineSpacing * 4);
     }
     
     // Right side icons
@@ -50,14 +61,19 @@ export function renderHUD() {
  */
 function renderSideIcons() {
     const ctx = State.ctx;
-    const healthBarX = State.width - 70;
-    const iconAreaRightEdge = healthBarX - 30;
+    
+    // Mobile scaling
+    const isMobile = State.width < 600;
+    const scale = isMobile ? 0.7 : 1;
+    
+    const healthBarX = State.width - (isMobile ? 50 : 70);
+    const iconAreaRightEdge = healthBarX - (isMobile ? 20 : 30);
     
     // Lives indicator - tiny ship icons stacked vertically
     ctx.shadowBlur = 0;
-    const shipIconSize = 0.4;
-    const verticalSpacing = 20;
-    const lifeIconsX = iconAreaRightEdge - 20;
+    const shipIconSize = 0.4 * scale;
+    const verticalSpacing = 20 * scale;
+    const lifeIconsX = iconAreaRightEdge - (isMobile ? 15 : 20);
     const lifeIconsStartY = State.height * 0.35;
     
     for (let i = 0; i < State.lives; i++) {
@@ -200,55 +216,58 @@ export function renderGameOver() {
     if (!State.gameOver || State.deathTimer > 0) return;
     
     const ctx = State.ctx;
+    const isMobile = State.width < 600;
+    const scale = isMobile ? State.width / 500 : 1;
     
     ctx.fillStyle = 'rgba(0,0,0,0.9)';
     ctx.fillRect(0, 0, State.width, State.height);
     ctx.textAlign = 'center';
     
     // GAME OVER
-    ctx.font = 'bold 64px Courier New';
+    ctx.font = `bold ${Math.floor(64 * scale)}px Courier New`;
     ctx.shadowBlur = 40;
     ctx.shadowColor = '#ff0000';
     ctx.fillStyle = '#ff0000';
-    ctx.fillText('GAME OVER', State.width/2, State.height/2 - 140);
+    ctx.fillText('GAME OVER', State.width/2, State.height/2 - 140 * scale);
     
     // APOPHIS STEERING COMMITTEE
-    ctx.font = '16px Courier New';
+    ctx.font = `${Math.floor(16 * scale)}px Courier New`;
     ctx.shadowBlur = 10;
     ctx.shadowColor = '#ff00ff';
     ctx.fillStyle = '#ff00ff';
-    ctx.fillText('APOPHIS STEERING COMMITTEE-27', State.width/2, State.height/2 - 90);
+    ctx.fillText('APOPHIS STEERING COMMITTEE-27', State.width/2, State.height/2 - 90 * scale);
     
     // EARTH DEFENSE FAILURE
-    ctx.font = 'bold 20px Courier New';
+    ctx.font = `bold ${Math.floor(16 * scale)}px Courier New`;
     ctx.shadowBlur = 15;
     ctx.shadowColor = '#ffff00';
     ctx.fillStyle = '#ffff00';
-    ctx.fillText('EARTH DEFENSE FAILURE — APOPHIS ADVANCES', State.width/2, State.height/2 - 40);
+    ctx.fillText('EARTH DEFENSE FAILURE — APOPHIS ADVANCES', State.width/2, State.height/2 - 50 * scale);
     
     // FINAL SCORE label
-    ctx.font = '18px Courier New';
+    ctx.font = `${Math.floor(18 * scale)}px Courier New`;
     ctx.shadowBlur = 10;
     ctx.shadowColor = '#888888';
     ctx.fillStyle = '#888888';
-    ctx.fillText('FINAL SCORE', State.width/2, State.height/2 + 20);
+    ctx.fillText('FINAL SCORE', State.width/2, State.height/2 + 10 * scale);
     
     // Score with color cycling glow
     const hue = (State.time * 2) % 360;
-    ctx.font = 'bold 56px Courier New';
+    ctx.font = `bold ${Math.floor(48 * scale)}px Courier New`;
     ctx.shadowBlur = 35;
     ctx.shadowColor = `hsl(${hue}, 100%, 50%)`;
     ctx.fillStyle = '#00ffff';
-    ctx.fillText(`${State.score} PTS`, State.width/2, State.height/2 + 80);
+    ctx.fillText(`${State.score} PTS`, State.width/2, State.height/2 + 70 * scale);
     
-    // PRESS -R- TO RESTART
+    // PRESS -R- TO RESTART (or TAP on mobile)
     const blink = Math.sin(State.time * 0.08) > 0;
     if (blink) {
-        ctx.font = '20px Courier New';
+        ctx.font = `${Math.floor(18 * scale)}px Courier New`;
         ctx.shadowBlur = 15;
         ctx.shadowColor = '#00ffff';
         ctx.fillStyle = '#00ffff';
-        ctx.fillText('PRESS -R- TO RESTART', State.width/2, State.height/2 + 150);
+        const restartText = isMobile ? 'TAP TO RESTART' : 'PRESS -R- TO RESTART';
+        ctx.fillText(restartText, State.width/2, State.height/2 + 130 * scale);
     }
     ctx.shadowBlur = 0;
 }
@@ -260,34 +279,36 @@ export function renderLevelTransition() {
     if (State.levelTransitionTimer <= 0) return;
     
     const ctx = State.ctx;
+    const isMobile = State.width < 600;
+    const scale = isMobile ? State.width / 500 : 1;
     
     ctx.fillStyle = 'rgba(0,0,0,0.7)';
     ctx.fillRect(0, 0, State.width, State.height);
     ctx.fillStyle = '#00ff00';
     ctx.shadowBlur = 30;
     ctx.shadowColor = '#00ff00';
-    ctx.font = 'bold 48px Courier New';
+    ctx.font = `bold ${Math.floor(36 * scale)}px Courier New`;
     ctx.textAlign = 'center';
-    ctx.fillText(`LEVEL ${State.level - 1} COMPLETE`, State.width/2, State.height/2 - 100);
+    ctx.fillText(`LEVEL ${State.level - 1} COMPLETE`, State.width/2, State.height/2 - 80 * scale);
     
-    ctx.font = 'bold 32px Courier New';
+    ctx.font = `bold ${Math.floor(22 * scale)}px Courier New`;
     ctx.fillStyle = '#ffff00';
     ctx.shadowColor = '#ffff00';
-    ctx.fillText(`BOSS DEFEATED: +${State.bossScoreGained} POINTS`, State.width/2, State.height/2 - 40);
+    ctx.fillText(`BOSS DEFEATED: +${State.bossScoreGained} PTS`, State.width/2, State.height/2 - 30 * scale);
     
     // Score with color cycling
     const hue = (State.time * 2) % 360;
-    ctx.font = 'bold 36px Courier New';
+    ctx.font = `bold ${Math.floor(26 * scale)}px Courier New`;
     ctx.shadowBlur = 25;
     ctx.shadowColor = `hsl(${hue}, 100%, 50%)`;
     ctx.fillStyle = '#00ffff';
-    ctx.fillText(`YOU'VE AMASSED ${State.score} PTS`, State.width/2, State.height/2 + 30);
+    ctx.fillText(`YOU'VE AMASSED ${State.score} PTS`, State.width/2, State.height/2 + 25 * scale);
     
-    ctx.font = 'bold 36px Courier New';
+    ctx.font = `bold ${Math.floor(28 * scale)}px Courier New`;
     ctx.fillStyle = '#00ffff';
     ctx.shadowColor = '#00ffff';
     ctx.shadowBlur = 30;
-    ctx.fillText(`ENTERING LEVEL ${State.level}`, State.width/2, State.height/2 + 100);
+    ctx.fillText(`ENTERING LEVEL ${State.level}`, State.width/2, State.height/2 + 80 * scale);
     ctx.shadowBlur = 0;
 }
 
@@ -309,23 +330,25 @@ export function renderChapterTransition() {
     if (State.chapterTransitionTimer <= 0) return;
     
     const ctx = State.ctx;
+    const isMobile = State.width < 600;
+    const scale = isMobile ? State.width / 500 : 1;
     
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
     ctx.fillRect(0, 0, State.width, State.height);
     ctx.fillStyle = '#ffff00';
     ctx.shadowBlur = 25;
     ctx.shadowColor = '#ffff00';
-    ctx.font = 'bold 40px Courier New';
+    ctx.font = `bold ${Math.floor(32 * scale)}px Courier New`;
     ctx.textAlign = 'center';
-    ctx.fillText(`CHAPTER ${State.chapter}: ${Config.CHAPTER_NAMES[State.chapter - 1]}`, State.width/2, State.height/2 - 30);
+    ctx.fillText(`CHAPTER ${State.chapter}: ${Config.CHAPTER_NAMES[State.chapter - 1]}`, State.width/2, State.height/2 - 30 * scale);
     
     // Score with color cycling
     const hue = (State.time * 2) % 360;
-    ctx.font = 'bold 28px Courier New';
+    ctx.font = `bold ${Math.floor(22 * scale)}px Courier New`;
     ctx.shadowBlur = 20;
     ctx.shadowColor = `hsl(${hue}, 100%, 50%)`;
     ctx.fillStyle = '#00ffff';
-    ctx.fillText(`YOU'VE AMASSED ${State.score} PTS`, State.width/2, State.height/2 + 30);
+    ctx.fillText(`YOU'VE AMASSED ${State.score} PTS`, State.width/2, State.height/2 + 25 * scale);
     ctx.shadowBlur = 0;
 }
 

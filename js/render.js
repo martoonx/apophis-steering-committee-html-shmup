@@ -5,6 +5,14 @@ import * as State from './state.js';
 import * as Config from './config.js';
 import { findMissileTarget } from './bullets.js';
 
+/**
+ * Get mobile scale factor for rendering
+ */
+function getMobileScale() {
+    const isMobile = State.width < 600;
+    return isMobile ? Math.min(State.width / 400, 0.7) * 0.75 : 1;
+}
+
 // =============================================================================
 // Background Rendering
 // =============================================================================
@@ -78,17 +86,21 @@ export function renderBackground() {
  */
 export function renderMiniBosses() {
     const ctx = State.ctx;
+    const scale = getMobileScale();
     
     State.miniBosses.forEach(mb => {
+        const sz = 15 * scale;
+        const szW = 20 * scale;
+        
         ctx.strokeStyle = mb.color1;
         ctx.shadowColor = mb.color1;
         ctx.shadowBlur = 15;
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.moveTo(mb.x, mb.y - 15);
-        ctx.lineTo(mb.x + 20, mb.y);
-        ctx.lineTo(mb.x, mb.y + 15);
-        ctx.lineTo(mb.x - 20, mb.y);
+        ctx.moveTo(mb.x, mb.y - sz);
+        ctx.lineTo(mb.x + szW, mb.y);
+        ctx.lineTo(mb.x, mb.y + sz);
+        ctx.lineTo(mb.x - szW, mb.y);
         ctx.closePath();
         ctx.stroke();
         
@@ -97,15 +109,15 @@ export function renderMiniBosses() {
         ctx.shadowColor = mb.color2;
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.arc(mb.x, mb.y, 8, 0, Math.PI * 2);
+        ctx.arc(mb.x, mb.y, 8 * scale, 0, Math.PI * 2);
         ctx.stroke();
         
         // Health bar
-        const barW = 80;
+        const barW = 80 * scale;
         ctx.fillStyle = '#440044';
-        ctx.fillRect(mb.x - barW/2, mb.y - 30, barW, 4);
+        ctx.fillRect(mb.x - barW/2, mb.y - 30 * scale, barW, 4);
         ctx.fillStyle = mb.color1;
-        ctx.fillRect(mb.x - barW/2, mb.y - 30, barW * (mb.hp / mb.maxHp), 4);
+        ctx.fillRect(mb.x - barW/2, mb.y - 30 * scale, barW * (mb.hp / mb.maxHp), 4);
     });
 }
 
@@ -201,26 +213,30 @@ export function renderMissiles() {
  */
 export function renderBoss() {
     const ctx = State.ctx;
+    const scale = getMobileScale();
     
     State.harassers.forEach(h => {
+        const sz = 20 * scale;
+        const szW = 30 * scale;
+        
         ctx.strokeStyle = '#ff00ff';
         ctx.shadowColor = '#ff00ff';
         ctx.shadowBlur = 20;
         ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.moveTo(h.x, h.y - 20);
-        ctx.lineTo(h.x + 30, h.y);
-        ctx.lineTo(h.x, h.y + 20);
-        ctx.lineTo(h.x - 30, h.y);
+        ctx.moveTo(h.x, h.y - sz);
+        ctx.lineTo(h.x + szW, h.y);
+        ctx.lineTo(h.x, h.y + sz);
+        ctx.lineTo(h.x - szW, h.y);
         ctx.closePath();
         ctx.stroke();
         
         // Health bar
-        const barW = 120;
+        const barW = 120 * scale;
         ctx.fillStyle = '#440044';
-        ctx.fillRect(h.x - barW/2, h.y - 45, barW, 6);
+        ctx.fillRect(h.x - barW/2, h.y - 45 * scale, barW, 6);
         ctx.fillStyle = '#ff00ff';
-        ctx.fillRect(h.x - barW/2, h.y - 45, barW * (h.hp / h.maxHp), 6);
+        ctx.fillRect(h.x - barW/2, h.y - 45 * scale, barW * (h.hp / h.maxHp), 6);
     });
 }
 
@@ -243,13 +259,14 @@ export function renderBossBullets() {
  */
 export function renderTrenchBlocks() {
     const ctx = State.ctx;
+    const scale = getMobileScale();
     
     State.trenchBlocks.forEach(b => {
         const bx = State.width/2 + b.worldLane * Config.FOV_SCALE * b.z;
         const by = State.height*0.3 + b.z * State.height*0.5;
         
         if (b.isSingleBlock) {
-            const sz = 90 * b.z;
+            const sz = 90 * b.z * scale;
             ctx.fillStyle = `rgba(255, 255, 255, ${0.6 + Math.random()*0.3})`;
             ctx.shadowBlur = 20;
             ctx.shadowColor = '#ffffff';
@@ -260,7 +277,7 @@ export function renderTrenchBlocks() {
             ctx.closePath();
             ctx.fill();
         } else {
-            const sz = 180 * b.z;
+            const sz = 180 * b.z * scale;
             ctx.fillStyle = `rgba(255, 255, 255, ${0.7 + Math.random()*0.3})`;
             ctx.shadowBlur = 15;
             ctx.shadowColor = '#ffffff';
@@ -331,22 +348,23 @@ export function renderBullets() {
  */
 export function renderPickups() {
     const ctx = State.ctx;
+    const mobileScale = getMobileScale();
     
     State.pickups.forEach(p => {
         let sz, px, py;
         
         if (p.verticalDrop) {
-            sz = p.size || 25;
+            sz = (p.size || 25) * mobileScale;
             px = p.x;
             py = p.y;
         } else {
-            sz = 25 * p.z;
+            sz = 25 * p.z * mobileScale;
             px = State.width/2 + p.worldLane * Config.FOV_SCALE * p.z;
             py = State.height*0.3 + p.z * State.height*0.5;
         }
         
         ctx.shadowBlur = 15;
-        ctx.font = '12px Courier New';
+        ctx.font = `${Math.floor(12 * mobileScale)}px Courier New`;
         ctx.textAlign = 'center';
         
         if (p.type === 'weapon') {
@@ -420,16 +438,17 @@ export function renderPickups() {
  */
 export function renderHearts() {
     const ctx = State.ctx;
+    const scale = getMobileScale();
     
     State.hearts.forEach(h => {
         let sz, hx, hy;
         
         if (h.verticalDrop) {
-            sz = h.size || 20;
+            sz = (h.size || 20) * scale;
             hx = h.x;
             hy = h.y;
         } else {
-            sz = 20 * h.z;
+            sz = 20 * h.z * scale;
             hx = State.width/2 + h.worldLane * Config.FOV_SCALE * h.z;
             hy = State.height*0.3 + h.z * State.height*0.5;
         }
@@ -453,16 +472,17 @@ export function renderHearts() {
  */
 export function renderEnemies() {
     const ctx = State.ctx;
+    const scale = getMobileScale();
     
     State.enemies.forEach(e => {
         let sz, ex, ey;
         
         if (e.verticalDrop) {
-            sz = e.size;
+            sz = e.size * scale;
             ex = e.x;
             ey = e.y;
         } else {
-            sz = e.size * e.z;
+            sz = e.size * e.z * scale;
             ex = State.width/2 + e.worldLane * Config.FOV_SCALE * e.z;
             ey = State.height*0.3 + e.z * State.height*0.5;
         }
@@ -511,9 +531,12 @@ export function renderPlayer() {
     
     if (State.gameOver || State.respawnTimer > 0) return;
     
+    const scale = getMobileScale();
+    
     ctx.save();
     ctx.translate(State.shipX, State.shipY);
     ctx.rotate(State.shipAngle * 0.2);
+    ctx.scale(scale, scale);
     
     // Invulnerability effect
     if (State.invulnerabilityTimer > 0) {
@@ -601,16 +624,115 @@ export function renderPlayer() {
 export function renderBars() {
     const ctx = State.ctx;
     
+    // Mobile scaling
+    const isMobile = State.width < 600;
+    const barWidth = isMobile ? 10 : 15;
+    const rightOffset = isMobile ? 25 : 40;
+    const healthOffset = isMobile ? 45 : 70;
+    
     // Shield bar
     ctx.strokeStyle = '#333';
-    ctx.strokeRect(State.width - 40, State.height * 0.3, 15, State.height * 0.4);
+    ctx.strokeRect(State.width - rightOffset, State.height * 0.3, barWidth, State.height * 0.4);
     ctx.fillStyle = '#ffff00';
-    ctx.fillRect(State.width - 40, State.height * 0.7, 15, -(State.height * 0.4 * (State.shieldLevel / 100)));
+    ctx.fillRect(State.width - rightOffset, State.height * 0.7, barWidth, -(State.height * 0.4 * (State.shieldLevel / 100)));
     
     // Health bar
-    const healthBarX = State.width - 70;
+    const healthBarX = State.width - healthOffset;
     ctx.strokeStyle = '#333';
-    ctx.strokeRect(healthBarX, State.height * 0.3, 15, State.height * 0.4);
+    ctx.strokeRect(healthBarX, State.height * 0.3, barWidth, State.height * 0.4);
     ctx.fillStyle = '#00ff00';
-    ctx.fillRect(healthBarX, State.height * 0.7, 15, -(State.height * 0.4 * (State.health / Config.MAX_HEALTH)));
+    ctx.fillRect(healthBarX, State.height * 0.7, barWidth, -(State.height * 0.4 * (State.health / Config.MAX_HEALTH)));
+}
+
+/**
+ * Render touch control buttons (mobile only)
+ */
+export function renderTouchControls() {
+    if (State.width >= 600) return;
+    
+    const ctx = State.ctx;
+    const w = State.width;
+    const h = State.height;
+    
+    const btnSize = 45;
+    const leftMargin = 15;
+    const verticalSpacing = 12;
+    const startY = h * 0.28;
+    
+    ctx.lineWidth = 2;
+    ctx.font = '12px Courier New';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Shield button - top (yellow)
+    const shieldY = startY;
+    ctx.globalAlpha = State.touchButtons?.shield ? 0.7 : 0.35;
+    ctx.strokeStyle = State.touchButtons?.shield ? '#ffff00' : '#666600';
+    ctx.fillStyle = State.touchButtons?.shield ? '#ffff00' : '#666600';
+    ctx.beginPath();
+    ctx.arc(leftMargin + btnSize/2, shieldY + btnSize/2, btnSize/2 - 5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 0.15;
+    ctx.fill();
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = '#ffff00';
+    ctx.fillText('SHLD', leftMargin + btnSize/2, shieldY + btnSize/2);
+    
+    // Missile button (orange)
+    const missileY = startY + btnSize + verticalSpacing;
+    ctx.globalAlpha = State.touchButtons?.missile ? 0.7 : 0.35;
+    ctx.strokeStyle = State.touchButtons?.missile ? '#ff6600' : '#663300';
+    ctx.fillStyle = State.touchButtons?.missile ? '#ff6600' : '#663300';
+    ctx.beginPath();
+    ctx.arc(leftMargin + btnSize/2, missileY + btnSize/2, btnSize/2 - 5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 0.15;
+    ctx.fill();
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = '#ff6600';
+    ctx.fillText('MISL', leftMargin + btnSize/2, missileY + btnSize/2);
+    
+    // Boomba button (red/orange)
+    const boombaY = startY + (btnSize + verticalSpacing) * 2;
+    ctx.globalAlpha = State.touchButtons?.boomba ? 0.7 : 0.35;
+    ctx.strokeStyle = State.touchButtons?.boomba ? '#ff3300' : '#661100';
+    ctx.fillStyle = State.touchButtons?.boomba ? '#ff3300' : '#661100';
+    ctx.beginPath();
+    ctx.arc(leftMargin + btnSize/2, boombaY + btnSize/2, btnSize/2 - 5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 0.15;
+    ctx.fill();
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = '#ff3300';
+    ctx.fillText('BOOM', leftMargin + btnSize/2, boombaY + btnSize/2);
+    
+    // Weapon Up button (cyan)
+    const weaponUpY = startY + (btnSize + verticalSpacing) * 3;
+    ctx.globalAlpha = State.touchButtons?.weaponUp ? 0.7 : 0.35;
+    ctx.strokeStyle = State.touchButtons?.weaponUp ? '#00ffff' : '#006666';
+    ctx.fillStyle = State.touchButtons?.weaponUp ? '#00ffff' : '#006666';
+    ctx.beginPath();
+    ctx.arc(leftMargin + btnSize/2, weaponUpY + btnSize/2, btnSize/2 - 5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 0.15;
+    ctx.fill();
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = '#00ffff';
+    ctx.fillText('WPN▲', leftMargin + btnSize/2, weaponUpY + btnSize/2);
+    
+    // Weapon Down button (cyan)
+    const weaponDownY = startY + (btnSize + verticalSpacing) * 4;
+    ctx.globalAlpha = State.touchButtons?.weaponDown ? 0.7 : 0.35;
+    ctx.strokeStyle = State.touchButtons?.weaponDown ? '#00ffff' : '#006666';
+    ctx.fillStyle = State.touchButtons?.weaponDown ? '#00ffff' : '#006666';
+    ctx.beginPath();
+    ctx.arc(leftMargin + btnSize/2, weaponDownY + btnSize/2, btnSize/2 - 5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 0.15;
+    ctx.fill();
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = '#00ffff';
+    ctx.fillText('WPN▼', leftMargin + btnSize/2, weaponDownY + btnSize/2);
+    
+    ctx.globalAlpha = 1;
 }

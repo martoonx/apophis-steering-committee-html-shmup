@@ -29,6 +29,12 @@ export function updatePlayerMovement() {
         State.adjustShipAngle(stickX * 0.15);
     }
     
+    // Touch movement (velocity-based: -1 to 1 range)
+    const touchMove = Input.getTouchMovement();
+    if (touchMove) {
+        State.adjustShipAngle(touchMove * 0.25);
+    }
+    
     // Dampen and apply movement
     State.dampenShipAngle(0.88);
     State.setShipX(Math.max(80, Math.min(State.width - 80, State.shipX + State.shipAngle * 12)));
@@ -102,13 +108,19 @@ export function handleWeaponCycling() {
 export function handleMissileFiring() {
     if (State.gameOver || State.respawnTimer > 0) return;
     
-    // Keyboard missile key (V)
-    if (Input.isMissileKeyPressed() && State.missileCooldown === 0) {
+    // Keyboard missile key (V) - uses request flag set on keydown
+    if (State.missileRequested) {
         fireMissile();
+        State.setMissileRequested(false);
     }
     
     // Gamepad missile button
     if (Input.isGamepadButtonJustPressed('missile')) {
+        fireMissile();
+    }
+    
+    // Touch missile button
+    if (Input.isTouchButtonJustPressed('missile')) {
         fireMissile();
     }
     

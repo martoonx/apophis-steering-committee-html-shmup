@@ -1,7 +1,25 @@
 // APOPHIS - Input Handling
-// Keyboard and gamepad input management
+// Keyboard, gamepad, and touch input management
 
 import * as State from './state.js';
+
+// Touch state
+let touchStartX = 0;
+let touchCurrentX = 0;
+let touchLastX = 0;
+let touchActive = false;
+let touchVelocity = 0;
+let movementTouchId = null; // Track which touch is for movement
+
+// Touch control zones (will be set based on screen size)
+let touchZones = {
+    shoot: null,
+    shield: null,
+    boomba: null,
+    missile: null,
+    weaponUp: null,
+    weaponDown: null
+};
 
 /**
  * Initialize input event listeners
@@ -14,17 +32,302 @@ export function initInput() {
     // Gamepad events
     window.addEventListener('gamepadconnected', handleGamepadConnected);
     window.addEventListener('gamepaddisconnected', handleGamepadDisconnected);
+    
+    // Touch events
+    initTouchControls();
+    
+    // Tilt events (will be enabled when user taps tilt button)
+    // Android: works immediately
+    // iOS: requires permission request
+}
+
+/**
+ * Initialize touch controls for mobile
+ */
+function initTouchControls() {
+    const canvas = document.getElementById('gameCanvas');
+    if (!canvas) return;
+    
+    // Prevent default touch behaviors
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+    canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+    
+    // Update touch zones on resize
+    window.addEventListener('resize', updateTouchZones);
+    updateTouchZones();
+}
+
+/**
+ * Update touch control zones based on screen size
+ */
+function updateTouchZones() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    
+    // Only enable touch zones on mobile
+    if (w >= 600) {
+        touchZones = { shoot: null, shield: null, boomba: null, missile: null, weaponUp: null, weaponDown: null };
+        return;
+    }
+    
+    // Left side vertical button layout - match render.js positions
+    const btnSize = 45;
+    const leftMargin = 15;
+    const verticalSpacing = 12;
+    const startY = h * 0.28;
+    
+    // No separate shoot button - shooting happens while moving
+    touchZones.shoot = null;
+    
+    // Shield button - top
+    touchZones.shield = {
+        x: leftMargin,
+        y: startY,
+        width: btnSize,
+        height: btnSize
+    };
+    
+    // Missile button
+    touchZones.missile = {
+        x: leftMargin,
+        y: startY + btnSize + verticalSpacing,
+        width: btnSize,
+        height: btnSize
+    };
+    
+    // Boomba button
+    touchZones.boomba = {
+        x: leftMargin,
+        y: startY + (btnSize + verticalSpacing) * 2,
+        width: btnSize,
+        height: btnSize
+    };
+    
+    // Weapon up button
+    touchZones.weaponUp = {
+        x: leftMargin,
+        y: startY + (btnSize + verticalSpacing) * 3,
+        width: btnSize,
+        height: btnSize
+    };
+    
+    // Weapon down button
+    touchZones.weaponDown = {
+        x: leftMargin,
+        y: startY + (btnSize + verticalSpacing) * 4,
+        width: btnSize,
+        height: btnSize
+    };
+}
+
+/**
+ * Check if a point is inside a zone
+ */
+function isInZone(x, y, zone) {
+    if (!zone) return false;
+    return x >= zone.x && x <= zone.x + zone.width &&
+           y >= zone.y && y <= zone.y + zone.height;
+}
+
+/**
+ * Handle touch start
+ */
+function handleTouchStart(e) {
+    e.preventDefault();
+    
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        const x = touch.clientX;
+        const y = touch.clientY;
+        
+        // If game is over, any tap triggers restart
+        if (State.gameOver && State.deathTimer <= 0) {
+            State.setTouchButton('restart', true);
+            // Clear it after a short delay so it only triggers once
+            setTimeout(() => State.setTouchButton('restart', false), 100);
+            return;
+        }
+        
+        // Check button zones
+        if (isInZone(x, y, touchZones.shoot)) {
+            State.setTouchButton('shoot', true);
+        } else if (isInZone(x, y, touchZones.shield)) {
+            State.setTouchButton('shield', true);
+        } else if (isInZone(x, y, touchZones.boomba)) {
+            State.setTouchButton('boomba', true);
+        } else if (isInZone(x, y, touchZones.missile)) {
+            State.setTouchButton('missile', true);
+        } else if (isInZone(x, y, touchZones.weaponUp)) {
+            State.setTouchButton('weaponUp', true);
+        } else if (isInZone(x, y, touchZones.weaponDown)) {
+            State.setTouchButton('weaponDown', true);
+        } else if (movementTouchId === null) {
+            // Movement touch - only if not already tracking one
+            movementTouchId = touch.identifier;
+            touchStartX = x;
+            touchCurrentX = x;
+            touchLastX = x;
+            touchActive = true;
+            touchVelocity = 0;
+        }
+    }
+}
+
+/**
+ * Handle touch move
+ */
+function handleTouchMove(e) {
+    e.preventDefault();
+    
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        
+        // Only update movement for the movement touch
+        if (touch.identifier === movementTouchId) {
+            touchCurrentX = touch.clientX;
+            
+            // Calculate velocity based on movement since last frame
+            // This makes the ship respond to finger DIRECTION, not distance from start
+            const delta = touchCurrentX - touchLastX;
+            touchLastX = touchCurrentX;
+            
+            // Scale and clamp velocity
+            // A quick swipe of 10px per frame = full speed
+            const sensitivity = 0.12;
+            touchVelocity = Math.max(-1, Math.min(1, delta * sensitivity));
+        }
+    }
+}
+
+/**
+ * Handle touch end
+ */
+function handleTouchEnd(e) {
+    e.preventDefault();
+    
+    // Check which touches ended
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        const x = touch.clientX;
+        const y = touch.clientY;
+        
+        // Check if this was the movement touch
+        if (touch.identifier === movementTouchId) {
+            movementTouchId = null;
+            touchActive = false;
+            touchVelocity = 0;
+        }
+        
+        // Check if touch was in button zones and release those buttons
+        if (isInZone(x, y, touchZones.shoot)) {
+            State.setTouchButton('shoot', false);
+        }
+        if (isInZone(x, y, touchZones.shield)) {
+            State.setTouchButton('shield', false);
+        }
+        if (isInZone(x, y, touchZones.boomba)) {
+            State.setTouchButton('boomba', false);
+        }
+        if (isInZone(x, y, touchZones.missile)) {
+            State.setTouchButton('missile', false);
+        }
+        if (isInZone(x, y, touchZones.weaponUp)) {
+            State.setTouchButton('weaponUp', false);
+        }
+        if (isInZone(x, y, touchZones.weaponDown)) {
+            State.setTouchButton('weaponDown', false);
+        }
+    }
+    
+    // If no touches remain, reset everything
+    if (e.touches.length === 0) {
+        movementTouchId = null;
+        touchActive = false;
+        touchMovement = 0;
+        State.setTouchButton('shoot', false);
+        State.setTouchButton('shield', false);
+        State.setTouchButton('boomba', false);
+        State.setTouchButton('missile', false);
+        State.setTouchButton('weaponUp', false);
+        State.setTouchButton('weaponDown', false);
+    }
+}
+
+/**
+ * Get touch movement value (for ship control)
+ */
+export function getTouchMovement() {
+    if (!touchActive) return 0;
+    return touchVelocity;
+}
+
+/**
+ * Check if touch shooting is active
+ */
+export function isTouchShooting() {
+    return State.touchButtons?.shoot || false;
+}
+
+/**
+ * Check if touch shield is active
+ */
+export function isTouchShielding() {
+    return State.touchButtons?.shield || false;
+}
+
+/**
+ * Check if touch boomba is active
+ */
+export function isTouchBoomba() {
+    return State.touchButtons?.boomba || false;
+}
+
+/**
+ * Check if touch missile is active
+ */
+export function isTouchMissile() {
+    return State.touchButtons?.missile || false;
+}
+
+/**
+ * Check if touch weapon up is active
+ */
+export function isTouchWeaponUp() {
+    return State.touchButtons?.weaponUp || false;
+}
+
+/**
+ * Check if touch weapon down is active
+ */
+export function isTouchWeaponDown() {
+    return State.touchButtons?.weaponDown || false;
+}
+
+/**
+ * Check if we're on a touch device
+ */
+export function isTouchDevice() {
+    return window.innerWidth < 600 && ('ontouchstart' in window);
 }
 
 /**
  * Handle key down events
  */
 function handleKeyDown(e) {
+    // Track previous state for "just pressed" detection
+    const wasPressed = State.keys[e.code];
     State.setKey(e.code, true);
     
     // Prevent default for space to avoid page scroll
     if (e.code === 'Space') {
         e.preventDefault();
+    }
+    
+    // Set missile request flag only on first press (not held)
+    if (e.code === 'KeyV' && !wasPressed) {
+        State.setMissileRequested(true);
     }
 }
 
@@ -63,7 +366,9 @@ export function updateInstructionsDisplay() {
     const instructionsEl = document.getElementById('instructions');
     if (!instructionsEl) return;
     
-    if (State.gamepadConnected) {
+    if (isTouchDevice()) {
+        instructionsEl.innerHTML = '👆 Drag to move | Tap buttons to fire/shield/boomba/missile';
+    } else if (State.gamepadConnected) {
         instructionsEl.innerHTML = '🎮 Controller: D-Pad/L-Stick Move | A Shoot | X Missile | B Shield | Y Boomba | L/R Weapon | Start Restart';
     } else {
         instructionsEl.innerHTML = '←→/AD Move | Z/SPACE Shoot | V Missile | X Shield | C Boomba | ↑↓/WS Weapon | R Restart';
@@ -168,6 +473,13 @@ export function isGamepadButtonJustPressed(button) {
 }
 
 /**
+ * Check if a touch button was just pressed this frame
+ */
+export function isTouchButtonJustPressed(button) {
+    return State.touchButtons[button] && !State.touchPrevButtons[button];
+}
+
+/**
  * Check if movement left is pressed (keyboard or gamepad)
  */
 export function isMovingLeft() {
@@ -182,28 +494,28 @@ export function isMovingRight() {
 }
 
 /**
- * Check if fire button is pressed (keyboard or gamepad)
+ * Check if fire button is pressed (keyboard, gamepad, or touch)
  */
 export function isFiring() {
-    return State.keys['KeyZ'] || State.keys['Space'] || State.gamepadButtons.shoot;
+    return State.keys['KeyZ'] || State.keys['Space'] || State.gamepadButtons.shoot || State.touchButtons.shoot || touchActive;
 }
 
 /**
- * Check if shield button is pressed (keyboard or gamepad)
+ * Check if shield button is pressed (keyboard, gamepad, or touch)
  */
 export function isShielding() {
-    return State.keys['KeyX'] || State.gamepadButtons.shield;
+    return State.keys['KeyX'] || State.gamepadButtons.shield || State.touchButtons.shield;
 }
 
 /**
- * Check if boomba button is pressed (keyboard or gamepad)
+ * Check if boomba button is pressed (keyboard, gamepad, or touch)
  */
 export function isBoombaPresseed() {
-    return State.keys['KeyC'] || State.gamepadButtons.boomba;
+    return State.keys['KeyC'] || State.gamepadButtons.boomba || State.touchButtons.boomba;
 }
 
 /**
- * Check if missile key was pressed (keyboard only - gamepad handled separately)
+ * Check if missile key was pressed (keyboard only - gamepad and touch handled separately)
  */
 export function isMissileKeyPressed() {
     return State.keys['KeyV'];
@@ -213,21 +525,30 @@ export function isMissileKeyPressed() {
  * Check if restart key is pressed
  */
 export function isRestartPressed() {
-    return State.keys['KeyR'] || isGamepadButtonJustPressed('restart');
+    return State.keys['KeyR'] || isGamepadButtonJustPressed('restart') || isTouchRestart();
 }
 
 /**
- * Check weapon cycle up
+ * Check if touch restart was triggered (any tap when game over on mobile)
+ */
+function isTouchRestart() {
+    if (State.width >= 600) return false;
+    // Touch restart is set when tapping anywhere during game over
+    return State.touchButtons?.restart || false;
+}
+
+/**
+ * Check weapon cycle up (keyboard or touch)
  */
 export function isWeaponUpPressed() {
-    return State.keys['ArrowUp'] || State.keys['KeyW'];
+    return State.keys['ArrowUp'] || State.keys['KeyW'] || isTouchButtonJustPressed('weaponUp');
 }
 
 /**
- * Check weapon cycle down
+ * Check weapon cycle down (keyboard or touch)
  */
 export function isWeaponDownPressed() {
-    return State.keys['ArrowDown'] || State.keys['KeyS'];
+    return State.keys['ArrowDown'] || State.keys['KeyS'] || isTouchButtonJustPressed('weaponDown');
 }
 
 /**

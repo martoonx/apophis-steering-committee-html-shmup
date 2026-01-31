@@ -93,3 +93,61 @@ canvas {
     width: 100%;
     height: 100%;
 }
+
+/* Mobile responsive adjustments */
+@media (max-width: 600px) {
+    #hud {
+        top: 10px;
+        left: 10px;
+        font-size: 16px;
+    }
+    
+    #levelDisplay {
+        top: 35px;
+        left: 10px;
+        font-size: 14px;
+    }
+    
+    #sector {
+        top: 10px;
+        right: 10px;
+        font-size: 12px;
+        max-width: 45%;
+        text-align: right;
+    }
+    
+    #alert {
+        font-size: 24px;
+    }
+    
+    #instructions {
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+        font-size: 9px;
+        text-align: center;
+    }
+    
+    #version {
+        display: none;
+    }
+}
+
+/* Very small screens */
+@media (max-width: 400px) {
+    #hud {
+        font-size: 14px;
+    }
+    
+    #levelDisplay {
+        font-size: 12px;
+    }
+    
+    #sector {
+        font-size: 10px;
+    }
+    
+    #instructions {
+        font-size: 8px;
+    }
+}

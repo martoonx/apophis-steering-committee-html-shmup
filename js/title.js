@@ -60,11 +60,20 @@ export function renderTitleScreen() {
         titleCtx.fill();
     });
     
-    // Calculate center and scaling - fit everything on screen
+    // Calculate center and scaling - different approach for portrait vs landscape
     const centerX = w / 2;
-    const scale = Math.min(w / 800, h / 600);
+    const isPortrait = h > w;
+    
+    // For portrait (mobile), scale based on width; for landscape, use min of both
+    let scale;
+    if (isPortrait) {
+        scale = w / 420;  // Optimize for mobile width
+    } else {
+        scale = Math.min(w / 800, h / 600);
+    }
+    
     const lineHeight = 38 * scale;
-    const startY = 30 * scale;
+    const startY = isPortrait ? 20 * scale : 30 * scale;
     
     // Title with color cycling glow
     const hue = (titleTime * 2) % 360;

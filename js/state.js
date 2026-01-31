@@ -92,6 +92,7 @@ export let invulnerabilityTimer = 0;
 // Missile system
 export let missileAmmo = 3;
 export let missileCooldown = 0;
+export let missileRequested = false;
 
 // Frame timing
 export let lastFrameTime = 0;
@@ -106,6 +107,18 @@ export let gamepad = null;
 export let gamepadButtons = {};
 export let gamepadPrevButtons = {};
 export let debugGamepad = false;
+
+// Touch state
+export let touchButtons = {
+    shoot: false,
+    shield: false,
+    boomba: false,
+    missile: false,
+    weaponUp: false,
+    weaponDown: false,
+    restart: false
+};
+export let touchPrevButtons = {};
 
 // Audio state (references set by audio.js)
 export let audioCtx = null;
@@ -255,6 +268,7 @@ export function setMissileAmmo(ammo) { missileAmmo = ammo; }
 export function adjustMissileAmmo(amount) { missileAmmo = Math.max(0, Math.min(Config.MAX_MISSILE_AMMO, missileAmmo + amount)); }
 export function setMissileCooldown(c) { missileCooldown = c; }
 export function decrementMissileCooldown() { if (missileCooldown > 0) missileCooldown--; }
+export function setMissileRequested(val) { missileRequested = val; }
 
 export function setLastFrameTime(t) { lastFrameTime = t; }
 export function setAccumulator(a) { accumulator = a; }
@@ -267,6 +281,12 @@ export function setGamepad(gp) { gamepad = gp; }
 export function setGamepadButtons(buttons) { gamepadButtons = buttons; }
 export function setGamepadPrevButtons(buttons) { gamepadPrevButtons = buttons; }
 export function setDebugGamepad(debug) { debugGamepad = debug; }
+
+export function setTouchButton(button, value) { 
+    touchPrevButtons[button] = touchButtons[button];
+    touchButtons[button] = value; 
+}
+export function setTouchPrevButtons(buttons) { touchPrevButtons = buttons; }
 
 export function setAudioContext(ctx) { audioCtx = ctx; }
 export function setEngineOsc(osc) { engineOsc = osc; }
@@ -329,6 +349,7 @@ export function resetGameState() {
     
     missileAmmo = 3;
     missileCooldown = 0;
+    missileRequested = false;
     
     if (scoreEl) scoreEl.textContent = score;
     if (levelEl) levelEl.textContent = level;

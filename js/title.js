@@ -254,7 +254,7 @@ export function renderTitleScreen() {
     titleCtx.shadowBlur = 5;
     titleCtx.shadowColor = '#444444';
     titleCtx.fillStyle = '#666666';
-    titleCtx.fillText('v27.6', centerX, y);
+    titleCtx.fillText('v27.7', centerX, y);
     
     State.setTitleAnimationId(requestAnimationFrame(renderTitleScreen));
 }

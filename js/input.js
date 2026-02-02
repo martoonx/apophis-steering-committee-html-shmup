@@ -129,14 +129,6 @@ function updateTouchZones() {
         width: btnSize,
         height: btnSize
     };
-    
-    // Keep shoot for auto-fire compatibility
-    touchZones.shoot = null;
-        height: btnSize
-    };
-    
-    // No separate shoot button - shooting happens while moving
-    touchZones.shoot = null;
 }
 
 /**

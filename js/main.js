@@ -6,7 +6,7 @@ import * as Config from './config.js';
 import { initAudio, updateEngineSound } from './audio.js';
 import { initInput, pollGamepad, isRestartPressed } from './input.js';
 import { initTitleScreen, stopTitleScreen } from './title.js';
-import { updatePlayerMovement, updateShield, handleShooting, handleWeaponCycling, handleMissileFiring, handleBoomba } from './player.js';
+import { updatePlayerMovement, updateShield, handleShooting, handleWeaponCycling, handleMissileFiring, handleBoomba, handleBoombaCycling } from './player.js';
 import { handleSpawning, updateEnemies, updateTrenchBlocks, cleanupEnemies } from './enemies.js';
 import { spawnBoss, updateBoss, handleBossFiring, updateBossBullets, updateMiniBosses, updateMiniBossBullets, spawnMiniBoss } from './bosses.js';
 import { updatePickups, collectPickups, cleanupPickups, spawnShieldPickup, spawnHeart, spawnInvulnPickup } from './pickups.js';
@@ -191,6 +191,7 @@ function update() {
         updateShield();
         handleShooting();
         handleWeaponCycling();
+        handleBoombaCycling();
         handleMissileFiring();
         handleBoomba();
         
@@ -244,6 +245,9 @@ function update() {
         if (State.chapter !== 4 && State.chapterTimer >= getChapterDuration()) {
             advanceChapter();
         }
+        
+        // Update previous key states
+        State.updatePrevKeys();
         
     } catch (error) {
         console.error('Update error:', error);
@@ -307,6 +311,9 @@ function loop(currentTime) {
         update();
         State.adjustAccumulator(-Config.FRAME_DURATION);
     }
+    
+    // Clear just-pressed flags AFTER all updates for this frame
+    State.clearJustPressed();
     
     // Always render
     render();

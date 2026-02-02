@@ -17,8 +17,9 @@ let touchZones = {
     shield: null,
     boomba: null,
     missile: null,
-    weaponUp: null,
-    weaponDown: null
+    weaponCycle: null,
+    weaponFire: null,
+    boombaCycle: null
 };
 
 /**
@@ -68,58 +69,74 @@ function updateTouchZones() {
     
     // Only enable touch zones on mobile
     if (w >= 600) {
-        touchZones = { shoot: null, shield: null, boomba: null, missile: null, weaponUp: null, weaponDown: null };
+        touchZones = { shoot: null, shield: null, boomba: null, missile: null, weaponCycle: null, weaponFire: null, boombaCycle: null };
         return;
     }
     
     // Left side vertical button layout - match render.js positions
     const btnSize = 45;
     const leftMargin = 15;
-    const verticalSpacing = 12;
-    const startY = h * 0.28;
+    const smallPadding = 8;
+    const largePadding = 18;
+    
+    // Calculate positions from bottom up
+    const bottomY = h - 40 - btnSize;
+    
+    // W▼ (weapon cycle) - bottom
+    touchZones.weaponCycle = {
+        x: leftMargin,
+        y: bottomY,
+        width: btnSize,
+        height: btnSize
+    };
+    
+    // WEAPON (fire weapon) - above W▼ with small padding
+    touchZones.weaponFire = {
+        x: leftMargin,
+        y: bottomY - btnSize - smallPadding,
+        width: btnSize,
+        height: btnSize
+    };
+    
+    // B▼ (boomba cycle) - above WEAPON with large padding
+    touchZones.boombaCycle = {
+        x: leftMargin,
+        y: bottomY - (btnSize + smallPadding) - btnSize - largePadding,
+        width: btnSize,
+        height: btnSize
+    };
+    
+    // BOOM (fire boomba) - above B▼ with small padding
+    touchZones.boomba = {
+        x: leftMargin,
+        y: bottomY - (btnSize + smallPadding) - (btnSize + largePadding) - btnSize - smallPadding,
+        width: btnSize,
+        height: btnSize
+    };
+    
+    // MISL - above BOOM with large padding
+    touchZones.missile = {
+        x: leftMargin,
+        y: bottomY - (btnSize + smallPadding) - (btnSize + largePadding) - (btnSize + smallPadding) - btnSize - largePadding,
+        width: btnSize,
+        height: btnSize
+    };
+    
+    // SHLD - above MISL with large padding
+    touchZones.shield = {
+        x: leftMargin,
+        y: bottomY - (btnSize + smallPadding) - (btnSize + largePadding) - (btnSize + smallPadding) - (btnSize + largePadding) - btnSize - largePadding,
+        width: btnSize,
+        height: btnSize
+    };
+    
+    // Keep shoot for auto-fire compatibility
+    touchZones.shoot = null;
+        height: btnSize
+    };
     
     // No separate shoot button - shooting happens while moving
     touchZones.shoot = null;
-    
-    // Shield button - top
-    touchZones.shield = {
-        x: leftMargin,
-        y: startY,
-        width: btnSize,
-        height: btnSize
-    };
-    
-    // Missile button
-    touchZones.missile = {
-        x: leftMargin,
-        y: startY + btnSize + verticalSpacing,
-        width: btnSize,
-        height: btnSize
-    };
-    
-    // Boomba button
-    touchZones.boomba = {
-        x: leftMargin,
-        y: startY + (btnSize + verticalSpacing) * 2,
-        width: btnSize,
-        height: btnSize
-    };
-    
-    // Weapon up button
-    touchZones.weaponUp = {
-        x: leftMargin,
-        y: startY + (btnSize + verticalSpacing) * 3,
-        width: btnSize,
-        height: btnSize
-    };
-    
-    // Weapon down button
-    touchZones.weaponDown = {
-        x: leftMargin,
-        y: startY + (btnSize + verticalSpacing) * 4,
-        width: btnSize,
-        height: btnSize
-    };
 }
 
 /**
@@ -151,18 +168,18 @@ function handleTouchStart(e) {
         }
         
         // Check button zones
-        if (isInZone(x, y, touchZones.shoot)) {
-            State.setTouchButton('shoot', true);
-        } else if (isInZone(x, y, touchZones.shield)) {
+        if (isInZone(x, y, touchZones.shield)) {
             State.setTouchButton('shield', true);
-        } else if (isInZone(x, y, touchZones.boomba)) {
-            State.setTouchButton('boomba', true);
         } else if (isInZone(x, y, touchZones.missile)) {
             State.setTouchButton('missile', true);
-        } else if (isInZone(x, y, touchZones.weaponUp)) {
-            State.setTouchButton('weaponUp', true);
-        } else if (isInZone(x, y, touchZones.weaponDown)) {
-            State.setTouchButton('weaponDown', true);
+        } else if (isInZone(x, y, touchZones.boomba)) {
+            State.setTouchButton('boomba', true);
+        } else if (isInZone(x, y, touchZones.boombaCycle)) {
+            State.setTouchButton('boombaCycle', true);
+        } else if (isInZone(x, y, touchZones.weaponFire)) {
+            State.setTouchButton('weaponFire', true);
+        } else if (isInZone(x, y, touchZones.weaponCycle)) {
+            State.setTouchButton('weaponCycle', true);
         } else if (movementTouchId === null) {
             // Movement touch - only if not already tracking one
             movementTouchId = touch.identifier;
@@ -221,23 +238,23 @@ function handleTouchEnd(e) {
         }
         
         // Check if touch was in button zones and release those buttons
-        if (isInZone(x, y, touchZones.shoot)) {
-            State.setTouchButton('shoot', false);
-        }
         if (isInZone(x, y, touchZones.shield)) {
             State.setTouchButton('shield', false);
-        }
-        if (isInZone(x, y, touchZones.boomba)) {
-            State.setTouchButton('boomba', false);
         }
         if (isInZone(x, y, touchZones.missile)) {
             State.setTouchButton('missile', false);
         }
-        if (isInZone(x, y, touchZones.weaponUp)) {
-            State.setTouchButton('weaponUp', false);
+        if (isInZone(x, y, touchZones.boomba)) {
+            State.setTouchButton('boomba', false);
         }
-        if (isInZone(x, y, touchZones.weaponDown)) {
-            State.setTouchButton('weaponDown', false);
+        if (isInZone(x, y, touchZones.boombaCycle)) {
+            State.setTouchButton('boombaCycle', false);
+        }
+        if (isInZone(x, y, touchZones.weaponFire)) {
+            State.setTouchButton('weaponFire', false);
+        }
+        if (isInZone(x, y, touchZones.weaponCycle)) {
+            State.setTouchButton('weaponCycle', false);
         }
     }
     
@@ -245,13 +262,13 @@ function handleTouchEnd(e) {
     if (e.touches.length === 0) {
         movementTouchId = null;
         touchActive = false;
-        touchMovement = 0;
-        State.setTouchButton('shoot', false);
+        touchVelocity = 0;
         State.setTouchButton('shield', false);
-        State.setTouchButton('boomba', false);
         State.setTouchButton('missile', false);
-        State.setTouchButton('weaponUp', false);
-        State.setTouchButton('weaponDown', false);
+        State.setTouchButton('boomba', false);
+        State.setTouchButton('boombaCycle', false);
+        State.setTouchButton('weaponFire', false);
+        State.setTouchButton('weaponCycle', false);
     }
 }
 
@@ -299,13 +316,6 @@ export function isTouchWeaponUp() {
 }
 
 /**
- * Check if touch weapon down is active
- */
-export function isTouchWeaponDown() {
-    return State.touchButtons?.weaponDown || false;
-}
-
-/**
  * Check if we're on a touch device
  */
 export function isTouchDevice() {
@@ -316,8 +326,15 @@ export function isTouchDevice() {
  * Handle key down events
  */
 function handleKeyDown(e) {
-    // Track previous state for "just pressed" detection
+    // Ignore auto-repeat events (when key is held down)
+    if (e.repeat) return;
+    
+    // Only set justPressed if key wasn't already down
     const wasPressed = State.keys[e.code];
+    if (!wasPressed) {
+        State.setJustPressed(e.code, true);
+    }
+    
     State.setKey(e.code, true);
     
     // Prevent default for space to avoid page scroll
@@ -371,7 +388,7 @@ export function updateInstructionsDisplay() {
     } else if (State.gamepadConnected) {
         instructionsEl.innerHTML = '🎮 Controller: D-Pad/L-Stick Move | A Shoot | X Missile | B Shield | Y Boomba | L/R Weapon | Start Restart';
     } else {
-        instructionsEl.innerHTML = '←→/AD Move | Z/SPACE Shoot | V Missile | X Shield | C Boomba | ↑↓/WS Weapon | R Restart';
+        instructionsEl.innerHTML = '←→/AD Move | Z/SPACE Shoot | V Missile | X Shield | C Boomba | ↑/W Weapon | ↓/S Boomba | R Restart';
     }
 }
 
@@ -497,7 +514,7 @@ export function isMovingRight() {
  * Check if fire button is pressed (keyboard, gamepad, or touch)
  */
 export function isFiring() {
-    return State.keys['KeyZ'] || State.keys['Space'] || State.gamepadButtons.shoot || State.touchButtons.shoot || touchActive;
+    return State.keys['KeyZ'] || State.keys['Space'] || State.gamepadButtons.shoot || State.touchButtons.weaponFire || touchActive;
 }
 
 /**
@@ -538,17 +555,17 @@ function isTouchRestart() {
 }
 
 /**
- * Check weapon cycle up (keyboard or touch)
+ * Check weapon cycle up (keyboard or touch) - triggers once per press
  */
 export function isWeaponUpPressed() {
-    return State.keys['ArrowUp'] || State.keys['KeyW'] || isTouchButtonJustPressed('weaponUp');
+    return State.justPressed['ArrowUp'] || State.justPressed['KeyW'] || isTouchButtonJustPressed('weaponUp');
 }
 
 /**
- * Check weapon cycle down (keyboard or touch)
+ * Check boomba cycle (keyboard Down/S or touch) - triggers once per press
  */
-export function isWeaponDownPressed() {
-    return State.keys['ArrowDown'] || State.keys['KeyS'] || isTouchButtonJustPressed('weaponDown');
+export function isBoombaCyclePressed() {
+    return State.justPressed['ArrowDown'] || State.justPressed['KeyS'] || isTouchButtonJustPressed('boombaCycle');
 }
 
 /**

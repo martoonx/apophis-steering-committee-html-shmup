@@ -57,13 +57,7 @@ canvas {
 }
 
 #instructions {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    color: #00ffff;
-    font-size: 14px;
-    text-shadow: 0 0 5px #00ffff;
-    z-index: 10;
+    display: none; /* Hidden - using canvas HUD instead */
 }
 
 #version {

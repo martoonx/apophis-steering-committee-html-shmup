@@ -29,27 +29,27 @@ export function renderHUD() {
     ctx.fillStyle = '#00ffff';
     ctx.fillText(`WEAPON: ${weaponName}`, leftMargin, State.height - bottomOffset);
     
+    // Boombas display (unified like weapons)
+    const totalBoombas = State.getTotalBoombaCount();
+    if (totalBoombas > 0) {
+        const currentType = State.getCurrentBoombaType();
+        const currentCount = State.getCurrentBoombaCount();
+        const boombaName = currentType.toUpperCase();
+        ctx.fillStyle = '#ffaa66';
+        ctx.fillText(`BOOMBAS: ${boombaName} x${currentCount}`, leftMargin, State.height - bottomOffset + lineSpacing);
+    } else {
+        ctx.fillStyle = '#666666';
+        ctx.fillText(`BOOMBAS: NONE`, leftMargin, State.height - bottomOffset + lineSpacing);
+    }
+    
     // Missiles
     ctx.fillStyle = State.missileAmmo <= 2 ? '#ff3300' : '#ff6600';
-    ctx.fillText(`MISSILES: ${State.missileAmmo}/${Config.MAX_MISSILE_AMMO}`, leftMargin, State.height - bottomOffset + lineSpacing);
-    
-    // Boombas
-    ctx.fillStyle = '#ff6600';
-    ctx.fillText(`BOOMBAS: ${State.boombaQueue.length}/${Config.MAX_BOOMBA_QUEUE}`, leftMargin, State.height - bottomOffset + lineSpacing * 2);
-    
-    if (State.boombaQueue.length > 0) {
-        const display = State.boombaQueue.slice(0, 3).map((b, idx) => {
-            const labels = { area: 'AREA', screen: 'SCREEN', charged: 'CHARGED' };
-            return idx === 0 ? `[${labels[b]}]` : labels[b];
-        }).join(' → ');
-        ctx.fillStyle = '#ffaa66';
-        ctx.fillText(display, leftMargin, State.height - bottomOffset + lineSpacing * 3);
-    }
+    ctx.fillText(`MISSILES: ${State.missileAmmo}/${Config.MAX_MISSILE_AMMO}`, leftMargin, State.height - bottomOffset + lineSpacing * 2);
     
     // Invulnerability
     if (State.invulnerabilityTimer > 0) {
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(`INVULN: ${Math.ceil(State.invulnerabilityTimer / 60)}s`, leftMargin, State.height - bottomOffset + lineSpacing * 4);
+        ctx.fillText(`INVULN: ${Math.ceil(State.invulnerabilityTimer / 60)}s`, leftMargin, State.height - bottomOffset + lineSpacing * 3);
     }
     
     // Right side icons
@@ -125,36 +125,27 @@ function renderSideIcons() {
         upgradeY += iconSpacing;
     }
     
-    // Boomba queue icons
+    // Boomba icons - only show types the player has
     upgradeY += 5;
-    const slotsToShow = Math.min(5, Math.max(3, State.boombaQueue.length));
+    const boombaTypes = ['area', 'screen', 'cluster'];
+    const boombaLetters = { area: 'A', screen: 'S', cluster: 'C' };
+    const boombaColors = { area: '#ff6600', screen: '#ff0000', cluster: '#ff00ff' };
+    const currentBoombaType = State.getCurrentBoombaType();
     
-    for (let i = 0; i < slotsToShow; i++) {
-        const hasBoomba = i < State.boombaQueue.length;
-        const boomba = hasBoomba ? State.boombaQueue[i] : null;
-        const isNext = i === 0 && hasBoomba;
-        const isCharging = isNext && State.chargingBoomba;
+    for (const type of boombaTypes) {
+        const count = State.boombaCounts[type];
         
-        if (hasBoomba) {
-            let letter, baseColor;
-            if (boomba === 'area') {
-                letter = 'A';
-                baseColor = '#ff6600';
-            } else if (boomba === 'screen') {
-                letter = 'S';
-                baseColor = '#ff0000';
-            } else {
-                letter = 'C';
-                baseColor = '#ff6600';
-            }
-            
-            const color = isCharging ? '#ffff00' : (isNext ? '#ffaa66' : baseColor);
-            const alpha = isNext ? 1 : 0.5;
+        // Only show if player has this type
+        if (count > 0) {
+            const isSelected = type === currentBoombaType;
+            const isCharging = isSelected && State.chargingBoomba;
+            const color = isCharging ? '#ffff00' : (isSelected ? '#ffffff' : boombaColors[type]);
+            const alpha = isSelected ? 1 : 0.5;
             
             ctx.globalAlpha = alpha;
             ctx.fillStyle = color;
             ctx.strokeStyle = color;
-            ctx.lineWidth = isNext ? 3 : 2;
+            ctx.lineWidth = isSelected ? 3 : 2;
             
             ctx.beginPath();
             ctx.arc(upgradeX, upgradeY, iconSize, 0, Math.PI * 2);
@@ -163,32 +154,16 @@ function renderSideIcons() {
             ctx.font = 'bold 12px Courier New';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(letter, upgradeX, upgradeY);
+            ctx.fillText(boombaLetters[type], upgradeX, upgradeY);
+            
+            // Show count next to icon
+            ctx.font = '10px Courier New';
+            ctx.textAlign = 'left';
+            ctx.fillText('x' + count, upgradeX + iconSize + 3, upgradeY);
             
             ctx.globalAlpha = 1;
-        } else {
-            ctx.globalAlpha = 0.2;
-            ctx.strokeStyle = '#666666';
-            ctx.lineWidth = 1;
-            
-            ctx.beginPath();
-            ctx.arc(upgradeX, upgradeY, iconSize, 0, Math.PI * 2);
-            ctx.stroke();
-            
-            ctx.globalAlpha = 1;
+            upgradeY += iconSpacing;
         }
-        
-        upgradeY += iconSpacing;
-    }
-    
-    // "+X more" indicator
-    if (State.boombaQueue.length > 5) {
-        ctx.fillStyle = '#ff6600';
-        ctx.globalAlpha = 0.7;
-        ctx.font = 'bold 10px Courier New';
-        ctx.textAlign = 'center';
-        ctx.fillText(`+${State.boombaQueue.length - 5}`, upgradeX, upgradeY);
-        ctx.globalAlpha = 1;
     }
     
     // Invulnerability icon

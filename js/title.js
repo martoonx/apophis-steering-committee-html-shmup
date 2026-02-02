@@ -246,7 +246,15 @@ export function renderTitleScreen() {
     titleCtx.shadowBlur = 10;
     titleCtx.shadowColor = '#00aaaa';
     titleCtx.fillStyle = '#00cccc';
-    titleCtx.fillText('←→/AD Move | Z/SPACE Shoot | V Missile | X Shield | C Boomba', centerX, y);
+    titleCtx.fillText('←→/AD Move | Z/SPACE Shoot | V Missile | X Shield | C Boomba | ↑/W Weapon | ↓/S Boomba', centerX, y);
+    
+    // Version number
+    y += lineHeight * 0.6;
+    titleCtx.font = `${8 * scale}px Courier New`;
+    titleCtx.shadowBlur = 5;
+    titleCtx.shadowColor = '#444444';
+    titleCtx.fillStyle = '#666666';
+    titleCtx.fillText('v27.6', centerX, y);
     
     State.setTitleAnimationId(requestAnimationFrame(renderTitleScreen));
 }

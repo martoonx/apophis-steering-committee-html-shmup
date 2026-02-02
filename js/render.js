@@ -656,30 +656,89 @@ export function renderTouchControls() {
     
     const btnSize = 45;
     const leftMargin = 15;
-    const verticalSpacing = 12;
-    const startY = h * 0.28;
+    const smallPadding = 8;
+    const largePadding = 18;
+    
+    // Calculate positions from bottom up
+    const bottomY = h - 40 - btnSize;
     
     ctx.lineWidth = 2;
-    ctx.font = '12px Courier New';
+    ctx.font = '11px Courier New';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
-    // Shield button - top (yellow)
-    const shieldY = startY;
-    ctx.globalAlpha = State.touchButtons?.shield ? 0.7 : 0.35;
-    ctx.strokeStyle = State.touchButtons?.shield ? '#ffff00' : '#666600';
-    ctx.fillStyle = State.touchButtons?.shield ? '#ffff00' : '#666600';
+    // W▼ (weapon cycle) - bottom (cyan)
+    const weaponCycleY = bottomY;
+    ctx.globalAlpha = State.touchButtons?.weaponCycle ? 0.7 : 0.35;
+    ctx.strokeStyle = State.touchButtons?.weaponCycle ? '#00ffff' : '#006666';
+    ctx.fillStyle = State.touchButtons?.weaponCycle ? '#00ffff' : '#006666';
     ctx.beginPath();
-    ctx.arc(leftMargin + btnSize/2, shieldY + btnSize/2, btnSize/2 - 5, 0, Math.PI * 2);
+    ctx.arc(leftMargin + btnSize/2, weaponCycleY + btnSize/2, btnSize/2 - 5, 0, Math.PI * 2);
     ctx.stroke();
     ctx.globalAlpha = 0.15;
     ctx.fill();
     ctx.globalAlpha = 0.7;
-    ctx.fillStyle = '#ffff00';
-    ctx.fillText('SHLD', leftMargin + btnSize/2, shieldY + btnSize/2);
+    ctx.fillStyle = '#00ffff';
+    ctx.fillText('W▼', leftMargin + btnSize/2, weaponCycleY + btnSize/2);
     
-    // Missile button (orange)
-    const missileY = startY + btnSize + verticalSpacing;
+    // WEAPON (fire weapon) - above W▼ (cyan)
+    const weaponFireY = bottomY - btnSize - smallPadding;
+    ctx.globalAlpha = State.touchButtons?.weaponFire ? 0.7 : 0.35;
+    ctx.strokeStyle = State.touchButtons?.weaponFire ? '#00ffff' : '#006666';
+    ctx.fillStyle = State.touchButtons?.weaponFire ? '#00ffff' : '#006666';
+    ctx.beginPath();
+    ctx.arc(leftMargin + btnSize/2, weaponFireY + btnSize/2, btnSize/2 - 5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 0.15;
+    ctx.fill();
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = '#00ffff';
+    ctx.font = '10px Courier New';
+    ctx.fillText('WEAPON', leftMargin + btnSize/2, weaponFireY + btnSize/2);
+    ctx.font = '11px Courier New';
+    
+    // B▼ (boomba cycle) - above WEAPON (magenta)
+    const boombaCycleY = bottomY - (btnSize + smallPadding) - btnSize - largePadding;
+    ctx.globalAlpha = State.touchButtons?.boombaCycle ? 0.7 : 0.35;
+    ctx.strokeStyle = State.touchButtons?.boombaCycle ? '#ff00ff' : '#660066';
+    ctx.fillStyle = State.touchButtons?.boombaCycle ? '#ff00ff' : '#660066';
+    ctx.beginPath();
+    ctx.arc(leftMargin + btnSize/2, boombaCycleY + btnSize/2, btnSize/2 - 5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 0.15;
+    ctx.fill();
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = '#ff00ff';
+    ctx.fillText('B▼', leftMargin + btnSize/2, boombaCycleY + btnSize/2);
+    
+    // BOOM (fire boomba) - above B▼ (red/orange)
+    const boombaY = bottomY - (btnSize + smallPadding) - (btnSize + largePadding) - btnSize - smallPadding;
+    const totalBoombas = State.getTotalBoombaCount();
+    const boombaCount = State.getCurrentBoombaCount();
+    ctx.globalAlpha = State.touchButtons?.boomba ? 0.7 : 0.35;
+    ctx.strokeStyle = State.touchButtons?.boomba ? '#ff3300' : '#661100';
+    ctx.fillStyle = State.touchButtons?.boomba ? '#ff3300' : '#661100';
+    ctx.beginPath();
+    ctx.arc(leftMargin + btnSize/2, boombaY + btnSize/2, btnSize/2 - 5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 0.15;
+    ctx.fill();
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = '#ff3300';
+    ctx.fillText('BOOM', leftMargin + btnSize/2, boombaY + btnSize/2 - 6);
+    ctx.font = '9px Courier New';
+    if (totalBoombas > 0) {
+        ctx.fillText('x' + boombaCount, leftMargin + btnSize/2, boombaY + btnSize/2 + 8);
+    } else {
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#666666';
+        ctx.fillText('x0', leftMargin + btnSize/2, boombaY + btnSize/2 + 8);
+        ctx.globalAlpha = 0.7;
+    }
+    ctx.font = '11px Courier New';
+    
+    // MISL - above BOOM (orange)
+    const missileY = bottomY - (btnSize + smallPadding) - (btnSize + largePadding) - (btnSize + smallPadding) - btnSize - largePadding;
     ctx.globalAlpha = State.touchButtons?.missile ? 0.7 : 0.35;
     ctx.strokeStyle = State.touchButtons?.missile ? '#ff6600' : '#663300';
     ctx.fillStyle = State.touchButtons?.missile ? '#ff6600' : '#663300';
@@ -692,47 +751,19 @@ export function renderTouchControls() {
     ctx.fillStyle = '#ff6600';
     ctx.fillText('MISL', leftMargin + btnSize/2, missileY + btnSize/2);
     
-    // Boomba button (red/orange)
-    const boombaY = startY + (btnSize + verticalSpacing) * 2;
-    ctx.globalAlpha = State.touchButtons?.boomba ? 0.7 : 0.35;
-    ctx.strokeStyle = State.touchButtons?.boomba ? '#ff3300' : '#661100';
-    ctx.fillStyle = State.touchButtons?.boomba ? '#ff3300' : '#661100';
+    // SHLD - above MISL (yellow)
+    const shieldY = bottomY - (btnSize + smallPadding) - (btnSize + largePadding) - (btnSize + smallPadding) - (btnSize + largePadding) - btnSize - largePadding;
+    ctx.globalAlpha = State.touchButtons?.shield ? 0.7 : 0.35;
+    ctx.strokeStyle = State.touchButtons?.shield ? '#ffff00' : '#666600';
+    ctx.fillStyle = State.touchButtons?.shield ? '#ffff00' : '#666600';
     ctx.beginPath();
-    ctx.arc(leftMargin + btnSize/2, boombaY + btnSize/2, btnSize/2 - 5, 0, Math.PI * 2);
+    ctx.arc(leftMargin + btnSize/2, shieldY + btnSize/2, btnSize/2 - 5, 0, Math.PI * 2);
     ctx.stroke();
     ctx.globalAlpha = 0.15;
     ctx.fill();
     ctx.globalAlpha = 0.7;
-    ctx.fillStyle = '#ff3300';
-    ctx.fillText('BOOM', leftMargin + btnSize/2, boombaY + btnSize/2);
-    
-    // Weapon Up button (cyan)
-    const weaponUpY = startY + (btnSize + verticalSpacing) * 3;
-    ctx.globalAlpha = State.touchButtons?.weaponUp ? 0.7 : 0.35;
-    ctx.strokeStyle = State.touchButtons?.weaponUp ? '#00ffff' : '#006666';
-    ctx.fillStyle = State.touchButtons?.weaponUp ? '#00ffff' : '#006666';
-    ctx.beginPath();
-    ctx.arc(leftMargin + btnSize/2, weaponUpY + btnSize/2, btnSize/2 - 5, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.globalAlpha = 0.15;
-    ctx.fill();
-    ctx.globalAlpha = 0.7;
-    ctx.fillStyle = '#00ffff';
-    ctx.fillText('WPN▲', leftMargin + btnSize/2, weaponUpY + btnSize/2);
-    
-    // Weapon Down button (cyan)
-    const weaponDownY = startY + (btnSize + verticalSpacing) * 4;
-    ctx.globalAlpha = State.touchButtons?.weaponDown ? 0.7 : 0.35;
-    ctx.strokeStyle = State.touchButtons?.weaponDown ? '#00ffff' : '#006666';
-    ctx.fillStyle = State.touchButtons?.weaponDown ? '#00ffff' : '#006666';
-    ctx.beginPath();
-    ctx.arc(leftMargin + btnSize/2, weaponDownY + btnSize/2, btnSize/2 - 5, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.globalAlpha = 0.15;
-    ctx.fill();
-    ctx.globalAlpha = 0.7;
-    ctx.fillStyle = '#00ffff';
-    ctx.fillText('WPN▼', leftMargin + btnSize/2, weaponDownY + btnSize/2);
+    ctx.fillStyle = '#ffff00';
+    ctx.fillText('SHLD', leftMargin + btnSize/2, shieldY + btnSize/2);
     
     ctx.globalAlpha = 1;
 }

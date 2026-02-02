@@ -82,9 +82,12 @@ export let currentWeapon = 0;
 export let weaponInventory = [0];
 
 // Boomba system
-export let boombaQueue = [];
+export let boombaQueue = []; // Keep for backward compatibility but won't use
 export let chargingBoomba = false;
 export let boombaCharge = 0;
+export let boombaTypes = ['area', 'screen', 'cluster']; // Available types
+export let boombaCounts = { area: 0, screen: 0, cluster: 0 }; // Count of each type
+export let currentBoomba = 0; // Index into boombaTypes
 
 // Invulnerability
 export let invulnerabilityTimer = 0;
@@ -100,6 +103,8 @@ export let accumulator = 0;
 
 // Input state
 export const keys = {};
+export const prevKeys = {};
+export const justPressed = {}; // Keys that were just pressed this frame
 
 // Gamepad state
 export let gamepadConnected = false;
@@ -114,8 +119,9 @@ export let touchButtons = {
     shield: false,
     boomba: false,
     missile: false,
-    weaponUp: false,
-    weaponDown: false,
+    weaponCycle: false,
+    weaponFire: false,
+    boombaCycle: false,
     restart: false
 };
 export let touchPrevButtons = {};
@@ -250,6 +256,17 @@ export function addWeapon(weapon) {
 
 export function setBoombaQueue(queue) { boombaQueue = queue; }
 export function addBoomba(type) { 
+    // New system: increment count for this type
+    if (boombaCounts[type] !== undefined) {
+        const wasEmpty = getTotalBoombaCount() === 0;
+        boombaCounts[type]++;
+        
+        // If this is the first boomba, auto-select this type
+        if (wasEmpty) {
+            currentBoomba = boombaTypes.indexOf(type);
+        }
+    }
+    // Also add to queue for backward compatibility
     if (boombaQueue.length < Config.MAX_BOOMBA_QUEUE) {
         boombaQueue.push(type);
     }
@@ -259,6 +276,44 @@ export function setChargingBoomba(charging) { chargingBoomba = charging; }
 export function setBoombaCharge(charge) { boombaCharge = charge; }
 export function incrementBoombaCharge(amount = Config.BOOMBA_CHARGE_RATE) { 
     boombaCharge = Math.min(boombaCharge + amount, Config.BOOMBA_CHARGE_MAX); 
+}
+
+// New boomba selection system
+export function cycleBoomba() {
+    // Only cycle if we have any boombas
+    if (getTotalBoombaCount() === 0) return;
+    
+    // Find next type that has ammo
+    const startIndex = currentBoomba;
+    do {
+        currentBoomba = (currentBoomba + 1) % boombaTypes.length;
+        if (boombaCounts[boombaTypes[currentBoomba]] > 0) {
+            return; // Found a type with ammo
+        }
+    } while (currentBoomba !== startIndex);
+}
+export function getCurrentBoombaType() {
+    return boombaTypes[currentBoomba];
+}
+export function getCurrentBoombaCount() {
+    return boombaCounts[boombaTypes[currentBoomba]];
+}
+export function getTotalBoombaCount() {
+    return boombaCounts.area + boombaCounts.screen + boombaCounts.cluster;
+}
+export function useBoomba() {
+    const type = boombaTypes[currentBoomba];
+    if (boombaCounts[type] > 0) {
+        boombaCounts[type]--;
+        
+        // If this type is now empty, auto-select next available type
+        if (boombaCounts[type] === 0 && getTotalBoombaCount() > 0) {
+            cycleBoomba();
+        }
+        
+        return type;
+    }
+    return null;
 }
 
 export function setInvulnerabilityTimer(t) { invulnerabilityTimer = t; }
@@ -275,6 +330,22 @@ export function setAccumulator(a) { accumulator = a; }
 export function adjustAccumulator(amount) { accumulator += amount; }
 
 export function setKey(code, value) { keys[code] = value; }
+export function setJustPressed(code, value) { justPressed[code] = value; }
+export function clearJustPressed() {
+    for (const key in justPressed) {
+        delete justPressed[key];
+    }
+}
+export function updatePrevKeys() { 
+    // Copy current key states to previous
+    // Clear prevKeys first, then copy
+    for (const key in prevKeys) {
+        delete prevKeys[key];
+    }
+    for (const key in keys) {
+        prevKeys[key] = keys[key];
+    }
+}
 
 export function setGamepadConnected(connected) { gamepadConnected = connected; }
 export function setGamepad(gp) { gamepad = gp; }
@@ -344,6 +415,8 @@ export function resetGameState() {
     boombaQueue = [];
     chargingBoomba = false;
     boombaCharge = 0;
+    boombaCounts = { area: 0, screen: 0, cluster: 0 };
+    currentBoomba = 0;
     
     invulnerabilityTimer = 0;
     
